@@ -1,0 +1,164 @@
+---
+title: "Lab 4 - Multiple Comparisons"
+author: "Solutions"
+output: pdf_document
+---
+
+## Goals
+
+The goal in this lab is to practice finding familywise confidence intervals for multiple comparisons.
+
+## Loading packages
+
+Here are some packages with functionality you may need for this lab.  Run this code chunk now.
+
+```{r tidy=TRUE, warning=FALSE, message=FALSE}
+library(readr)
+library(ggplot2)
+library(gridExtra)
+library(mosaic)
+library(dplyr)
+library(gmodels)
+options("pillar.sigfig" = 10) # print 10 significant digits in summarize output
+longevity <- read_csv("http://www.evanlray.com/data/sleuth3/ex0501_longevity.csv") %>%
+  mutate(
+    Diet = factor(Diet, levels = c("NP", "N/N85", "N/R50", "R/R50", "lopro", "N/R40"))
+  )
+nrow(longevity)
+```
+
+#### Find the multiplier that would be used for Bonferroni 95% familywise intervals for 5 comparisons based on this data set.
+
+```{r}
+bonferroni_mult <- qt(1-0.05/(2*5), df=nrow(longevity)-6)
+bonferroni_mult
+```
+
+#### Find the multiplier that would be used for Scheffe 95% familywise intervals for 5 comparisons based on this data set.
+
+```{r}
+scheffe_mult <- sqrt((6-1)*qf(1-0.05, df1=6-1, df2=nrow(longevity)-6))
+scheffe_mult
+```
+
+
+#### Find familywise 95% confidence intervals
+
+The code below finds individual 95% confidence intervals for the 5 differences in group means the researchers planned for this study.  For each, add calculations of appropriately adjusted Bonferroni and Scheffe familywise intervals.
+
+```{r}
+## Fit linear model
+lm_longevity <- lm(Lifetime ~ Diet, data=longevity)
+
+```
+
+
+#### (a) $H_0: \mu_2 = \mu_3$ vs $H_A: \mu_2 \neq \mu_3$.  Are the population mean lifetimes the same for the \textbf{N/N85} and \textbf{N/R50} groups?
+
+```{r tidy=TRUE}
+## Individual 95% confidence interval:
+ind_mu2_mu3 <- fit.contrast(lm_longevity, "Diet", c(0,1,-1,0,0,0), conf.int = 0.95)
+print("Individual 95% confidence interval:")
+ind_mu2_mu3
+
+## Bonferroni 95% familywise interval:
+print("Bonferroni 95% familywise interval:")
+fit.contrast(lm_longevity, "Diet", c(0,1,-1,0,0,0), conf.int = 1-0.05/5)
+
+## OR
+c(ind_mu2_mu3[1,1]-bonferroni_mult*ind_mu2_mu3[1,2], ind_mu2_mu3[1,1]+bonferroni_mult*ind_mu2_mu3[1,2])
+
+## Scheffe 95% familywise interval:
+print("Scheffe 95% familywise interval:")
+c(ind_mu2_mu3[1,1]-scheffe_mult*ind_mu2_mu3[1,2], ind_mu2_mu3[1,1]+scheffe_mult*ind_mu2_mu3[1,2])
+
+```
+
+No, there is evidence that the mean lifetimes are not the same for the \textbf{N/N85} and \textbf{N/R50} groups. 
+
+#### (b) $H_0: \mu_3 = \mu_4$ vs $H_A: \mu_3 \neq \mu_4$.  Are the population mean lifetimes the same for the \textbf{N/R50} and \textbf{R/R50} groups?
+
+```{r}
+## Individual 95% confidence interval:
+ind_mu3_mu4 <- fit.contrast(lm_longevity, "Diet", c(0,0,1,-1,0,0), conf.int = 0.95)
+print("Individual 95% confidence interval:")
+ind_mu3_mu4
+
+## Bonferroni 95% familywise interval:
+print("Bonferroni 95% familywise interval:")
+fit.contrast(lm_longevity, "Diet", c(0,0,1,-1,0,0), conf.int = 1-0.05/5)
+
+## Scheffe 95% familywise interval:
+print("Scheffe 95% familywise interval:")
+c(ind_mu3_mu4[1,1]-scheffe_mult*ind_mu3_mu4[1,2], ind_mu3_mu4[1,1]+scheffe_mult*ind_mu3_mu4[1,2])
+
+```
+
+Yes, the population mean lifetimes are the same for the \textbf{N/R50} and \textbf{R/R50} groups.
+
+#### (c) $H_0: \mu_3 = \mu_6$ vs $H_A: \mu_3 \neq \mu_6$.  Are the population mean lifetimes the same for the \textbf{N/R50} and \textbf{N/R40} groups?
+
+```{r}
+## Individual 95% confidence interval:
+ind_mu3_mu6 <- fit.contrast(lm_longevity, "Diet", c(0,0,1,0,0,-1), conf.int = 0.95)
+print("Individual 95% confidence interval:")
+ind_mu3_mu6
+
+## Bonferroni 95% familywise interval:
+print("Bonferroni 95% familywise interval:")
+fit.contrast(lm_longevity, "Diet", c(0,0,1,0,0,-1), conf.int = 1-0.05/5)
+
+## Scheffe 95% familywise interval:
+print("Scheffe 95% familywise interval:")
+c(ind_mu3_mu6[1,1]-scheffe_mult*ind_mu3_mu6[1,2], ind_mu3_mu6[1,1]+scheffe_mult*ind_mu3_mu6[1,2])
+
+```
+
+Yes, the population mean lifetimes are the same for the \textbf{N/R50} and \textbf{N/R40} groups. 
+
+#### (d) $H_0: \mu_3 = \mu_5$ vs $H_A: \mu_3 \neq \mu_5$.  Are the population mean lifetimes the same for the \textbf{N/R50} and \textbf{N/R50} lopro groups?
+
+```{r}
+## Individual 95% confidence interval:
+ind_mu3_mu5 <- fit.contrast(lm_longevity, "Diet", c(0,0,1,0,-1,0), conf.int = 0.95)
+print("Individual 95% confidence interval:")
+ind_mu3_mu5
+
+## Bonferroni 95% familywise interval:
+print("Bonferroni 95% familywise interval:")
+fit.contrast(lm_longevity, "Diet", c(0,0,1,0,-1,0), conf.int = 1-0.05/5)
+
+## Scheffe 95% familywise interval:
+print("Scheffe 95% familywise interval:")
+c(ind_mu3_mu5[1,1]-scheffe_mult*ind_mu3_mu5[1,2], ind_mu3_mu5[1,1]+scheffe_mult*ind_mu3_mu5[1,2])
+
+```
+
+Looking at just the individual 95% confidence interval, it appear that the mean lifetimes for the \textbf{N/R50} and \textbf{N/R50} lopro groups are different. Once we adjust for multiple comparisons, however, the population mean lifetimes appear to be the same for the \textbf{N/R50} and \textbf{N/R50} lopro groups.
+
+#### (e) $H_0: \mu_2 = \mu_1$ vs $H_A: \mu_2 \neq \mu_1$.  Are the population mean lifetimes the same for the \textbf{N/N85} and \textbf{NP} groups?
+
+```{r}
+ind_mu2_mu1 <- fit.contrast(lm_longevity, "Diet", c(-1,1,0,0,0,0), conf.int = 0.95)
+print("Individual 95% confidence interval:")
+ind_mu2_mu1
+
+## Bonferroni 95% familywise interval:
+print("Bonferroni 95% familywise interval:")
+fit.contrast(lm_longevity, "Diet", c(-1,1,0,0,0,0), conf.int = 1-0.05/5)
+
+## Scheffe 95% familywise interval:
+print("Scheffe 95% familywise interval:")
+c(ind_mu2_mu1[1,1]-scheffe_mult*ind_mu2_mu1[1,2], ind_mu2_mu1[1,1]+scheffe_mult*ind_mu2_mu1[1,2])
+
+```
+
+No, there is evidence that the mean lifetimes are not the same for the \textbf{N/N85} and \textbf{NP} groups.
+
+#### What is the interpretation of the individual 95% confidence interval obtained in part (a) from the fit.contrast function?
+
+We are 95% confident that the difference in population mean lifetimes for the \textbf{N/N85} and \textbf{N/R50} groups is between -11.942 and -7.270. For 95% of samples, an interval calculated in this way will contain the difference in population mean lifetimes for the \textbf{N/N85} and \textbf{N/R50} groups.
+
+#### What is the interpretation of the Bonferroni intervals?  
+
+We are 95% confident that the difference in population mean lifetimes for the \textbf{N/N85} and \textbf{N/R50} groups is between -12.68 and -6.53, for the \textbf{N/R50} and \textbf{R/R50} groups is between -3.68 and 2.50, for the \textbf{N/R50} and \textbf{N/R40} groups is between -5.85 and 0.21, for the \textbf{N/R50} and \textbf{N/R50} lopro groups is between -0.48 and 5.70, and for the \textbf{N/N85} and \textbf{NP} groups is between 1.92 and 8.66. For 95% of samples, all 5 of the intervals constructed in this way will simultaneously contain the difference in means they are estimating.
